@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Repository Finder</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 600px;
+        }
+
+        form {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        button {
+            padding: 0.75rem 1.5rem;
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #27ae60;
+        }
+
+        #repos {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .repo-item {
+            padding: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .repo-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .error {
+            color: #e74c3c;
+            margin-top: 1rem;
+        }
+
+        .loading {
+            text-align: center;
+            color: #666;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <form id="searchForm">
+            <input 
+                type="text" 
+                id="username" 
+                placeholder="Github username..." 
+                required
+            >
+            <button type="submit">Search</button>
+        </form>
+        <div id="loading" class="loading" style="display: none;">
+            Fetching repositories...
+        </div>
+        <div id="error" class="error" style="display: none;"></div>
+        <ul id="repos"></ul>
+    </div>
+
+    <script>
+        document.getElementById('searchForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value.trim();
+            const reposList = document.getElementById('repos');
+            const loadingDiv = document.getElementById('loading');
+            const errorDiv = document.getElementById('error');
+            
+            // Clear previous results and errors
+            reposList.innerHTML = '';
+            errorDiv.style.display = 'none';
+            
+            // Show loading state
+            loadingDiv.style.display = 'block';
+            
+            // Make API request
+            fetch(`https://api.github.com/users/${username}/repos`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('User not found or error occurred');
+                    }
+                    return response.json();
+                })
+                .then(repos => {
+                    loadingDiv.style.display = 'none';
+                    
+                    if (repos.length === 0) {
+                        errorDiv.textContent = 'No repositories found for this user.';
+                        errorDiv.style.display = 'block';
+                        return;
+                    }
+                    
+                    // Create list items for each repo
+                    repos.forEach(repo => {
+                        const li = document.createElement('li');
+                        li.className = 'repo-item';
+                        li.innerHTML = `
+                            <strong>${repo.name}</strong>
+                            ${repo.description ? `<p>${repo.description}</p>` : ''}
+                        `;
+                        
+                        // Add click event to redirect to repo
+                        li.addEventListener('click', () => {
+                            window.open(repo.html_url, '_blank');
+                        });
+                        
+                        reposList.appendChild(li);
+                    });
+                })
+                .catch(error => {
+                    loadingDiv.style.display = 'none';
+                    errorDiv.textContent = error.message;
+                    errorDiv.style.display = 'block';
+                });
+        });
+    </script>
+</body>
+</html>
